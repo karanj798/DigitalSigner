@@ -1,3 +1,5 @@
+package server;
+
 import java.rmi.RemoteException;
 
 public class RemoteObj implements  CommonService {

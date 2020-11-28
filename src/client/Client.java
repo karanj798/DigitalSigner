@@ -1,3 +1,5 @@
+package client;
+
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -7,11 +9,11 @@ import java.util.Arrays;
 public class Client {
     public static void main(String[] args) {
         Registry registry = null;
-        CommonService obj;
+        client.CommonService obj;
 
         try {
             registry = LocateRegistry.getRegistry("localhost");
-            obj = (CommonService) registry.lookup("MasterNode");
+            obj = (client.CommonService) registry.lookup("MasterNode");
             System.out.println(Arrays.toString(registry.list()));
             handleInputs(obj);
         } catch (RemoteException e) {
@@ -19,7 +21,7 @@ public class Client {
         } catch (NotBoundException e) {
             try {
                 System.out.println(Arrays.toString(registry.list()));
-                obj = (CommonService) registry.lookup("BackupNode");
+                obj = (client.CommonService) registry.lookup("BackupNode");
                 handleInputs(obj);
             } catch (RemoteException e1) {
                 e1.printStackTrace();
@@ -28,7 +30,7 @@ public class Client {
             }
         }
     }
-    public static void handleInputs(CommonService obj) throws RemoteException {
+    public static void handleInputs(client.CommonService obj) throws RemoteException {
         System.out.println(obj.getMessage());
     }
 }

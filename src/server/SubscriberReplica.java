@@ -1,3 +1,5 @@
+package server;
+
 import org.zeromq.SocketType;
 import org.zeromq.ZMQ;
 import org.zeromq.ZContext;
