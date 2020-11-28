@@ -1,5 +1,7 @@
 package server;
 
+import common.CommonService;
+
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -7,7 +9,9 @@ import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 
 public class MasterNode {
-    public static void main(String[] args) throws RemoteException, NotBoundException {
+    public static void main(String[] args) throws RemoteException {
+        if (System.getSecurityManager() == null)
+            System.setSecurityManager(new SecurityManager());
 
         String registryName = "MasterNode";
         CommonService obj = new RemoteObj();
@@ -30,21 +34,15 @@ public class MasterNode {
     }
 
     public static void startReplicaService(){
-        Thread pubReplicaThread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                PublisherReplica pReplica = new PublisherReplica("tcp://*:5516");
-                pReplica.start();
-            }
+        Thread pubReplicaThread = new Thread(() -> {
+            PublisherReplica pReplica = new PublisherReplica("tcp://*:5516");
+            pReplica.start();
         });
     
-        Thread subReplicaThread = new Thread(new Runnable(){
-            @Override
-            public void run() {
-                SubscriberReplica sReplica = new SubscriberReplica("tcp://*:5517");
-                sReplica.start();
-            }
-        }); 
+        Thread subReplicaThread = new Thread(() -> {
+            SubscriberReplica sReplica = new SubscriberReplica("tcp://*:5517");
+            sReplica.start();
+        });
 
         pubReplicaThread.start();
         subReplicaThread.start();
