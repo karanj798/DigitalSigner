@@ -3,8 +3,12 @@ package server;
 import org.zeromq.SocketType;
 import org.zeromq.ZMQ;
 import org.zeromq.ZContext;
+import org.zeromq.ZMsg;
 
-public class SubscriberReplica {
+import java.nio.charset.StandardCharsets;
+import java.util.StringTokenizer;
+
+public class SubscriberReplica extends Thread{
     private ZContext context;
     private ZMQ.Socket subscriber;
     private String connection;
@@ -15,23 +19,35 @@ public class SubscriberReplica {
         this.context = new ZContext();
     }
 
-    public void start() {
+    @Override
+    public void run(){
+        this.startPub();
+    }
+
+    public void startPub() {
         open();
 
-        subscriber.subscribe("update".getBytes(ZMQ.CHARSET));
+        subscriber.subscribe(ZMQ.SUBSCRIPTION_ALL);
 
-        // ZMQ.Poller poller = ZMQ.Poller(1);
-        // poller.register(subscriber, ZMQ.Poller.POLLIN);
         while (!Thread.currentThread().isInterrupted()) {
-            // poller.poll(100);
-            // if (poller.pollin(0)) {
-            //     String content = subscriber.recvStr();
-            //     System.out.println(content);
-            // }
+            try {
+                ZMsg inMsg = ZMsg.recvMsg(subscriber);
+                String fileName = inMsg.pop().toString();
+                byte[] fileContent = inMsg.pop().getData();
+
+                System.out.println("fileName: " + fileName);
+                System.out.println("fileContent: " + new String(fileContent, StandardCharsets.UTF_8));
+
+                // save file here
+            } finally {
+                //nothing
+            }
         }
 
         close();
     }
+
+    public void recvNewFile(){}
 
     public void open() {
         subscriber = context.createSocket(SocketType.SUB);

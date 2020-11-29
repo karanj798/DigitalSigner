@@ -15,7 +15,7 @@ public class BackupNode {
             System.setSecurityManager(new SecurityManager());
 
         String registryName = "BackupNode";
-        CommonService obj = new RemoteObj();
+        CommonService obj = new RemoteObj(null, "tcp://*:5516");
 
         CommonService stub = (CommonService) UnicastRemoteObject.exportObject(obj, 0);
         Registry registry = LocateRegistry.getRegistry();
@@ -31,9 +31,9 @@ public class BackupNode {
             }
         }));
 
-        //startReplicaService();
     }
 
+    // will remove after
     public static void startReplicaService() {
         Thread pubReplicaThread = new Thread(() -> {
             PublisherReplica pReplica = new PublisherReplica("tcp://*:5517");
@@ -45,7 +45,7 @@ public class BackupNode {
             sReplica.start();
         });
 
-        pubReplicaThread.start();
+        //pubReplicaThread.start();
         subReplicaThread.start();
     }
 }

@@ -2,19 +2,22 @@ package server;
 
 import common.CommonService;
 
+import java.io.File;
+import java.io.IOException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.Scanner;
 
 public class MasterNode {
-    public static void main(String[] args) throws RemoteException {
+    public static void main(String[] args) throws IOException {
         if (System.getSecurityManager() == null)
             System.setSecurityManager(new SecurityManager());
 
         String registryName = "MasterNode";
-        CommonService obj = new RemoteObj();
+        CommonService obj = new RemoteObj("tcp://*:5516",null);
         CommonService stub = (CommonService) UnicastRemoteObject.exportObject(obj, 0);
         Registry registry = LocateRegistry.getRegistry();
         registry.rebind(registryName, stub);
@@ -27,12 +30,9 @@ public class MasterNode {
                 e.printStackTrace();
             }
         }));
-
-        //startReplicaService();
-
-
     }
 
+    // will remove after
     public static void startReplicaService(){
         Thread pubReplicaThread = new Thread(() -> {
             PublisherReplica pReplica = new PublisherReplica("tcp://*:5516");
@@ -45,6 +45,6 @@ public class MasterNode {
         });
 
         pubReplicaThread.start();
-        subReplicaThread.start();
+        //subReplicaThread.start();
     }
 }
