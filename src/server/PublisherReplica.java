@@ -1,10 +1,12 @@
 package server;
 
-import org.zeromq.SocketType;
-import org.zeromq.ZMQ;
-import org.zeromq.ZContext;
+import org.zeromq.*;
 
-public class PublisherReplica{
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+
+public class PublisherReplica extends Thread{
     private ZContext context;
     private ZMQ.Socket publisher;
     private String connection;
@@ -15,17 +17,36 @@ public class PublisherReplica{
         context = new ZContext();
     }
 
-    public void start() {
+    @Override
+    public void run(){
+        this.startSub();
+    }
+
+    public void startSub() {
         open();
-        while (!Thread.currentThread().isInterrupted()) {
-            publisher.send("update" + i++);
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+        //while (!Thread.currentThread().isInterrupted()) {
+        //publisher.send("update" + i++);
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
-        close();
+        //}
+        //close();
+    }
+
+    public void publishNewFile(String fileName, byte[] fileContent) throws IOException {
+        ZMsg outMsg = new ZMsg();
+        outMsg.add(new ZFrame(fileName));
+        outMsg.add(new ZFrame(fileContent));
+
+        outMsg.send(publisher);
+
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     public void open() {
