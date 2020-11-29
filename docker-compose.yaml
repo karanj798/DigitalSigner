@@ -1,0 +1,17 @@
+version: '3.8'
+services:
+    redis-master:
+        image: redis:latest
+        deploy:
+            replicas: 1
+        container_name: redis-master
+        ports:
+            - 6379:6379
+    redis-slave:
+        image: redis:latest
+        command: redis-server --port 6380 --slaveof redis-master 6379 --replica-read-only no
+        deploy:
+            replicas: 1
+        container_name: redis2
+        ports:
+            - 6380:6380
