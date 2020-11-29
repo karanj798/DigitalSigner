@@ -8,5 +8,6 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="org.zeromq:jeromq:0.5.2" level="project" />
+    <orderEntry type="library" name="io.lettuce:lettuce-core:6.0.1.RELEASE" level="project" />
   </component>
 </module>

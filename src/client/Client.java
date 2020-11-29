@@ -7,6 +7,7 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.Arrays;
+import java.util.Scanner;
 
 public class Client {
     public static void main(String[] args) {
@@ -33,6 +34,12 @@ public class Client {
     }
 
     public static void handleInputs(CommonService obj) throws RemoteException {
-        System.out.println(obj.getMessage());
+        Scanner in = new Scanner(System.in);
+        System.out.print("Enter client name: ");
+
+        Profile profile = new Profile(in.nextLine());
+        profile.generatePrivatePublicKeysPair();
+        //System.out.println(profile.getPublicKeyAsString());
+        obj.insertKey(profile.name, profile.getPublicKeyAsString());
     }
 }
