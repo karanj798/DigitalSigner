@@ -30,15 +30,17 @@ public class SubscriberReplica extends Thread{
         subscriber.subscribe(ZMQ.SUBSCRIPTION_ALL);
 
         while (!Thread.currentThread().isInterrupted()) {
-            try{
+            try {
                 ZMsg inMsg = ZMsg.recvMsg(subscriber);
                 String fileName = inMsg.pop().toString();
                 byte[] fileContent = inMsg.pop().getData();
 
                 System.out.println("fileName: " + fileName);
                 System.out.println("fileContent: " + new String(fileContent, StandardCharsets.UTF_8));
-            } catch (Exception e){
-                e.printStackTrace();
+
+                // save file here
+            } finally {
+                //nothing
             }
         }
 
