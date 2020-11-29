@@ -1,12 +1,11 @@
 package server;
 
 import org.zeromq.SocketType;
-import org.zeromq.ZMQ;
 import org.zeromq.ZContext;
+import org.zeromq.ZMQ;
 import org.zeromq.ZMsg;
 
 import java.nio.charset.StandardCharsets;
-import java.util.StringTokenizer;
 
 public class SubscriberReplica extends Thread{
     private ZContext context;

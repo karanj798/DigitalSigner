@@ -2,14 +2,12 @@ package server;
 
 import common.CommonService;
 
-import java.io.File;
 import java.io.IOException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
-import java.util.Scanner;
 
 public class MasterNode {
     public static void main(String[] args) throws IOException {
