@@ -1,6 +1,7 @@
 package server;
 
 import common.CommonService;
+import common.FileUtils;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisURI;
 import io.lettuce.core.api.StatefulRedisConnection;
@@ -15,15 +16,19 @@ import java.rmi.RemoteException;
 public class RemoteObj implements CommonService {
     PublisherReplica pReplica;
     SubscriberReplica sReplica;
+    FileUtils fileUtils;
+    String nodeType;
 
-    public RemoteObj (String pubAddr, String subAddr){
+    public RemoteObj (String pubAddr, String subAddr, String nodeType){
+        this.nodeType = nodeType;
+        this.fileUtils = new FileUtils();
         if(pubAddr != null){
-            this.pReplica = new PublisherReplica(pubAddr);
+            this.pReplica = new PublisherReplica(pubAddr, nodeType);
             pReplica.start();
         }
 
         if(subAddr != null){
-            this.sReplica = new SubscriberReplica(subAddr);
+            this.sReplica = new SubscriberReplica(subAddr, nodeType);
             sReplica.start();
         }
     }
@@ -36,20 +41,21 @@ public class RemoteObj implements CommonService {
     @Override
     public void uploadFile(String fileName, byte[] fileContent) throws RemoteException {
         try {
-            System.out.println("File : " + fileName + " is being recieved...");
+            String directoryPath = fileUtils.getResourcesPath() + this.nodeType;
+            File directory = new File(directoryPath);
+            if (! directory.exists()) directory.mkdir(); //Create a directory if it does not exist
 
-            File file = new File(fileName);
-            BufferedOutputStream output = new BufferedOutputStream(new FileOutputStream(fileName));
+            File file = new File(directoryPath + "/" + fileName);
+            BufferedOutputStream output = new BufferedOutputStream(new FileOutputStream(file.getAbsoluteFile()));
             output.write(fileContent, 0, fileContent.length);
             output.flush();
             output.close();
 
-            System.out.println("Successfully downloaded the file " + fileName + " from the Client");
+            System.out.println("Successfully received the file " + fileName + " from the Client to sign...");
 
             pReplica.publishNewFile(fileName, fileContent);
         } catch (Exception e) {
-            System.out.println("FileImpl: " + e.getMessage());
-            e.printStackTrace();
+            System.out.println("RemoteObj: " + e.getMessage());
         }
     }
 

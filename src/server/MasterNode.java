@@ -15,7 +15,7 @@ public class MasterNode {
             System.setSecurityManager(new SecurityManager());
 
         String registryName = "MasterNode";
-        CommonService obj = new RemoteObj("tcp://*:5516",null);
+        CommonService obj = new RemoteObj("tcp://*:5516","tcp://*:5517", "Master");
         CommonService stub = (CommonService) UnicastRemoteObject.exportObject(obj, 0);
         Registry registry = LocateRegistry.getRegistry();
         registry.rebind(registryName, stub);
@@ -30,19 +30,4 @@ public class MasterNode {
         }));
     }
 
-    // will remove after
-    public static void startReplicaService(){
-        Thread pubReplicaThread = new Thread(() -> {
-            PublisherReplica pReplica = new PublisherReplica("tcp://*:5516");
-            pReplica.start();
-        });
-    
-        Thread subReplicaThread = new Thread(() -> {
-            SubscriberReplica sReplica = new SubscriberReplica("tcp://*:5517");
-            sReplica.start();
-        });
-
-        pubReplicaThread.start();
-        //subReplicaThread.start();
-    }
 }
