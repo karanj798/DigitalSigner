@@ -41,15 +41,12 @@ public class PDFHandler {
      * @param timestampList
      */
     public void addSignature(List<String> signatures, List<Timestamp> timestampList) {
-        // Create a Page object
         PDPage pdPage = new PDPage();
-        // Add the page to the document and save the document to a desired file.
         pdfFile.addPage(pdPage);
         try {
             PDPageContentStream contentStream = new PDPageContentStream(pdfFile, pdPage);
 
             contentStream.beginText();
-            //contentStream.moveTextPositionByAmount(40, 700);
             contentStream.setFont(PDType1Font.HELVETICA_BOLD, 16);
             contentStream.setLeading(14.5f);
             contentStream.newLineAtOffset(30, 725);
