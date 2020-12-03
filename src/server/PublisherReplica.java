@@ -42,7 +42,6 @@ public class PublisherReplica extends Thread{
         outMsg.add(new ZFrame(fileName));
         outMsg.add(new ZFrame(fileContent));
 
-        System.out.println("SFSDF");
         outMsg.send(publisher);
 
         try {

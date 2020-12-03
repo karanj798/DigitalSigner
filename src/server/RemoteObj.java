@@ -11,7 +11,13 @@ import io.lettuce.core.api.sync.RedisStringCommands;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.rmi.RemoteException;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class RemoteObj implements CommonService {
     PublisherReplica pReplica;
@@ -73,5 +79,34 @@ public class RemoteObj implements CommonService {
 
         connection.close();
         redisClient.shutdown();
+    }
+
+    @Override
+    public void signDocument(String fileName) throws RemoteException{
+        String directoryPath = fileUtils.getResourcesPath() + this.nodeType;
+        PDFHandler pdfHandler = new PDFHandler(new File(directoryPath + "/" + fileName));
+        pdfHandler.loadDocument();
+
+        // replace after ->
+        List<String> signatures = new ArrayList<>();
+        signatures.add("Karan");
+        signatures.add("John");
+
+        List<Timestamp> timestamps = new ArrayList<>();
+
+        for (int i = 1; i <= 2; i++) {
+            timestamps.add(new Timestamp(System.currentTimeMillis()));
+        }
+        // <- replace after
+
+        pdfHandler.addSignature(signatures, timestamps);
+        File signedFile = pdfHandler.savePDFFile();
+
+        // Replicate on the backup server
+        try {
+            pReplica.publishNewFile(signedFile.getName(), Files.readAllBytes(signedFile.toPath()));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

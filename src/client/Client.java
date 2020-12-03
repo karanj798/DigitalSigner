@@ -35,10 +35,10 @@ public class Client {
             System.out.println("Upload file? [1=yes]");
             int num = in.nextInt();
             if(num == 1){
-                File file = new File("resources/test.txt");
+                File file = new File("resources/test.pdf");
                 obj.uploadFile(file.getName(), Files.readAllBytes(file.toPath()));
+                obj.signDocument(file.getName());
             }
-
 
             handleInputs(obj);
         } catch (RemoteException | NotBoundException e) {
