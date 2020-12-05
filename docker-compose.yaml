@@ -20,6 +20,7 @@ services:
 
     redis-request-master:
         image: redis:latest
+        command: redis-server --port 6381
         deploy:
             replicas: 1
         container_name: redis-request-master
@@ -27,7 +28,7 @@ services:
             - 6381:6381
     redis-request-slave:
         image: redis:latest
-        command: redis-server --port 6380 --slaveof redis-request-master 6381 --replica-read-only no
+        command: redis-server --port 6382 --slaveof redis-request-master 6381 --replica-read-only no
         deploy:
             replicas: 1
         container_name: redis-request-slave
@@ -38,6 +39,7 @@ services:
 
     redis-response-master:
         image: redis:latest
+        command: redis-server --port 6383
         deploy:
             replicas: 1
         container_name: redis-response-master
@@ -45,7 +47,7 @@ services:
             - 6383:6383
     redis-response-slave:
         image: redis:latest
-        command: redis-server --port 6380 --slaveof redis-response-master 6383 --replica-read-only no
+        command: redis-server --port 6384 --slaveof redis-response-master 6383 --replica-read-only no
         deploy:
             replicas: 1
         container_name: redis-response-slave
