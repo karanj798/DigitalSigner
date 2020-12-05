@@ -1,11 +1,14 @@
 package server;
 
+import com.google.gson.Gson;
 import common.CommonService;
 import common.FileUtils;
+import common.model.Request;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisURI;
 import io.lettuce.core.api.StatefulRedisConnection;
 import io.lettuce.core.api.async.RedisAsyncCommands;
+import io.lettuce.core.api.sync.RedisKeyCommands;
 import io.lettuce.core.api.sync.RedisStringCommands;
 
 import java.io.BufferedOutputStream;
@@ -17,7 +20,7 @@ import java.rmi.RemoteException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
+import java.util.UUID;
 
 public class RemoteObj implements CommonService {
     PublisherReplica pReplica;
@@ -111,12 +114,54 @@ public class RemoteObj implements CommonService {
     }
 
     @Override
-    public void request(String fileName, byte[] fileContent, String[] signerList) throws RemoteException {
-        uploadFile(fileName, fileContent);
-        cacheRequest(fileName, signerList);
+    public String request(Request request, byte[] fileContent) throws RemoteException {
+        uploadFile(request.getFileName(), fileContent);
+        return cacheRequest(request);
     }
 
-    public void cacheRequest(String fileName, String[] signerList) {
+    public String cacheRequest(Request request) {
+        String uuid = UUID.nameUUIDFromBytes(request.getFileName().getBytes()).toString();
 
+        // Write to Request Redis Instance
+        RedisURI redisURI = RedisURI.Builder.redis("127.0.0.1", 6381).build();
+        RedisClient redisClient = RedisClient.create(redisURI);
+        StatefulRedisConnection<String, String> connection = redisClient.connect();
+        RedisStringCommands<String, String> sync = connection.sync();
+
+        if (sync.get(uuid) == null) {
+            sync.set(uuid, request.toString());
+        }
+
+        connection.close();
+        redisClient.shutdown();
+        return uuid;
+    }
+
+    @Override
+    public List<String> getFilesForSigning(String userName) throws RemoteException {
+
+        // Read from Request Redis Instance
+        RedisURI redisURI = RedisURI.Builder.redis("127.0.0.1", 6381).build();
+        RedisClient redisClient = RedisClient.create(redisURI);
+        StatefulRedisConnection<String, String> connection = redisClient.connect();
+        RedisKeyCommands<String, String> syncKeyCmd = connection.sync();
+        RedisStringCommands<String, String> syncStringCmd = connection.sync();
+
+        List<String> keySet = syncKeyCmd.keys("*");
+
+        List<String> documentList = new ArrayList<>();
+
+        for (String k : keySet) {
+            Gson gson = new Gson();
+            Request request = gson.fromJson(syncStringCmd.get(k), Request.class);
+            if (request.getSignerList().contains(userName)) {
+                documentList.add(request.getFileName());
+            }
+        }
+
+        connection.close();
+        redisClient.shutdown();
+
+        return documentList;
     }
 }

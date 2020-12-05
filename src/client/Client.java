@@ -1,6 +1,7 @@
 package client;
 
 import common.CommonService;
+import common.model.Request;
 
 import java.io.File;
 import java.io.IOException;
@@ -10,7 +11,10 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Scanner;
+import java.util.stream.Collectors;
 
 public class Client {
     public static void main(String[] args) {
@@ -52,14 +56,14 @@ public class Client {
                 try {
                     System.out.print("Enter file name: ");
                     String fileName = in.nextLine();
-                    System.out.print("Which users need to sign (seperated by comma): ");
-                    String[] userNameList = in.nextLine().split(",");
+                    System.out.print("Which users need to sign (separated by comma): ");
+                    List<String> userNameList = Arrays.stream(in.nextLine().split(",")).collect(Collectors.toList());
                     File file = new File("resources/" + profileName + "/" + fileName);
 
-                    obj.request(file.getName(), Files.readAllBytes(file.toPath()), userNameList);
+                    System.out.println(obj.request(new Request(fileName, userNameList), Files.readAllBytes(file.toPath())));
                 } catch (IOException e) { e.printStackTrace(); }
             } else if (response.equals("2")) {
-
+                System.out.println(obj.getFilesForSigning(profileName));
             }
         }
     }
