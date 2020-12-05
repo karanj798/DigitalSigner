@@ -109,4 +109,14 @@ public class RemoteObj implements CommonService {
             e.printStackTrace();
         }
     }
+
+    @Override
+    public void request(String fileName, byte[] fileContent, String[] signerList) throws RemoteException {
+        uploadFile(fileName, fileContent);
+        cacheRequest(fileName, signerList);
+    }
+
+    public void cacheRequest(String fileName, String[] signerList) {
+
+    }
 }

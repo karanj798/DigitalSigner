@@ -30,20 +30,8 @@ public class Client {
                 System.out.println("[ERROR]: All servers are down...");
                 System.exit(0);
             }
-
-            Scanner in = new Scanner(System.in);
-            System.out.println("Upload file? [1=yes]");
-            int num = in.nextInt();
-            if(num == 1){
-                File file = new File("resources/test.pdf");
-                obj.uploadFile(file.getName(), Files.readAllBytes(file.toPath()));
-                obj.signDocument(file.getName());
-            }
-
             handleInputs(obj);
         } catch (RemoteException | NotBoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
             e.printStackTrace();
         }
     }
@@ -51,10 +39,28 @@ public class Client {
     public static void handleInputs(CommonService obj) throws RemoteException {
         Scanner in = new Scanner(System.in);
         System.out.print("Enter client name: ");
+        String profileName = in.nextLine();
 
-        Profile profile = new Profile(in.nextLine());
+        Profile profile = new Profile(profileName);
         profile.generatePrivatePublicKeysPair();
-        //System.out.println(profile.getPublicKeyAsString());
         obj.insertKey(profile.name, profile.getPublicKeyAsString());
+        System.out.print("Enter selection (1=Upload File | 2=Wait for Signing File): ");
+
+        while (in.hasNextLine()) {
+            String response = in.nextLine();
+            if (response.equals("1")) {
+                try {
+                    System.out.print("Enter file name: ");
+                    String fileName = in.nextLine();
+                    System.out.print("Which users need to sign (seperated by comma): ");
+                    String[] userNameList = in.nextLine().split(",");
+                    File file = new File("resources/" + profileName + "/" + fileName);
+
+                    obj.request(file.getName(), Files.readAllBytes(file.toPath()), userNameList);
+                } catch (IOException e) { e.printStackTrace(); }
+            } else if (response.equals("2")) {
+
+            }
+        }
     }
 }
