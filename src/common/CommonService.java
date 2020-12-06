@@ -9,7 +9,6 @@ import java.util.List;
 
 public interface CommonService extends Remote {
     void insertKey(String userName, String publicKey) throws RemoteException;
-    void uploadFile(String fileName, byte[] fileContent) throws RemoteException;
     String request(Request request, byte[] fileContent) throws RemoteException;
     List<String> getFilesForSigning(String userName) throws RemoteException;
     byte[] downloadFile(String fileName)  throws RemoteException;
