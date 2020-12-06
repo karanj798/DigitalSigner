@@ -6,7 +6,7 @@ import org.zeromq.ZMQ.Poller;
 import org.zeromq.ZMQ.Socket;
 import org.zeromq.ZContext;
 
-public class Broker {
+public class RedisBroker {
     public static void main(String[] args) {
         for (int i = 0; i < 10; i++) {
             new RedisWorker().start();
