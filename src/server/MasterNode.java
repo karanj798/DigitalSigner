@@ -9,6 +9,9 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 
+/**
+ * This class is a Main RMI Server.
+ */
 public class MasterNode {
     public static void main(String[] args) throws IOException {
         if (System.getSecurityManager() == null)

@@ -7,6 +7,9 @@ import java.rmi.RemoteException;
 import java.security.PublicKey;
 import java.util.List;
 
+/**
+ * RMI interface that used by Client/Server.
+ */
 public interface CommonService extends Remote {
     void insertKey(String userName, String publicKey) throws RemoteException;
     String request(Request request, byte[] fileContent) throws RemoteException;

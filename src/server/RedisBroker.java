@@ -6,8 +6,12 @@ import org.zeromq.ZMQ.Poller;
 import org.zeromq.ZMQ.Socket;
 import org.zeromq.ZContext;
 
+/**
+ * This class is a Broker which handles all the requests to connect to Redis from MasterNode and BackupNode.
+ */
 public class RedisBroker {
     public static void main(String[] args) {
+        // Spawn 10 worker threads
         for (int i = 0; i < 10; i++) {
             new RedisWorker().start();
         }

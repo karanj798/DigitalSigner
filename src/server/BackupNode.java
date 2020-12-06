@@ -8,6 +8,9 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 
+/**
+ * This class is a Backup RMI Server.
+ */
 public class BackupNode {
     public static void main(String[] args) throws RemoteException {
 

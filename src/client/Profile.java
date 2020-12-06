@@ -13,16 +13,27 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 
+/**
+ * This class used to store clients Public/Private keys and creates a profile folder under resources.
+ */
 public class Profile {
 
     String name;
     FileUtils fileUtils;
+
+    /**
+     * Constructor of this class, initializes instance variables.
+     * @param name Name of the profile.
+     */
     public Profile(String name) {
         this.name = name;
         this.fileUtils = new FileUtils();
         mkdir();
     }
 
+    /**
+     * Make a folder using the name of the Profile.
+     */
     private void mkdir() {
         if (!Files.exists(Paths.get(fileUtils.getResourcesPath() + this.name))) {
             try {
@@ -33,12 +44,19 @@ public class Profile {
         }
     }
 
+    /**
+     * This method checks if the public/private keys are stored under user's profile.
+     * @return true/false based on if both the files are present.
+     */
     private boolean keysExists() {
         String resourcePath = fileUtils.getResourcesPath() + this.name + "/";
         return new File(resourcePath + this.name + ".key").exists() &&
                 new File(resourcePath + this.name + ".pub").exists();
     }
 
+    /**
+     * This method generates a Public/Private key pair object.
+     */
     public void generatePrivatePublicKeysPair() {
         if (!keysExists()) {
             KeyPairGenerator keyPairGenerator = null;
@@ -55,6 +73,10 @@ public class Profile {
         }
     }
 
+    /**
+     * This method outputs the public/private keys as binary file.
+     * @param keyPair Public/Private key pair object.
+     */
     private void saveKeys(KeyPair keyPair) {
         String resourcePath = fileUtils.getResourcesPath() + this.name + "/";
 
@@ -70,6 +92,10 @@ public class Profile {
         }
     }
 
+    /**
+     * This method retrieves the private key.
+     * @return PrivateKey
+     */
     public PrivateKey getPrivateKey() {
         PrivateKey privateKey = null;
         if(this.keysExists()) {
@@ -85,6 +111,10 @@ public class Profile {
         return privateKey;
     }
 
+    /**
+     * This method retrieves the public key.
+     * @return PublicKey.
+     */
     public PublicKey getPublicKey() {
         PublicKey publicKey = null;
         if(this.keysExists()) {
@@ -100,6 +130,10 @@ public class Profile {
         return publicKey;
     }
 
+    /**
+     * This method returns the public key into textual format.
+     * @return Textual representation of public key.
+     */
     public String getPublicKeyAsString() {
         return "-----BEGIN RSA PUBLIC KEY-----\n" +
                 (Base64.getEncoder().encodeToString(getPublicKey().getEncoded())) +

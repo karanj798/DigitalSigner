@@ -23,12 +23,21 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * This is class handles incoming RMI requests from Client.
+ */
 public class RemoteObj implements CommonService {
     PublisherReplica pReplica;
     SubscriberReplica sReplica;
     FileUtils fileUtils;
     String nodeType;
 
+    /**
+     * Initializes pub/sub for file replication.
+     * @param pubAddr Port for publishing
+     * @param subAddr Port for subscribing
+     * @param nodeType Name of the node (Master/BackUp)
+     */
     public RemoteObj(String pubAddr, String subAddr, String nodeType) {
         this.nodeType = nodeType;
         this.fileUtils = new FileUtils();
@@ -43,6 +52,12 @@ public class RemoteObj implements CommonService {
         }
     }
 
+    /**
+     * This method inserts the Public Key of the client in the Redis Instance.
+     * @param userName Name of the user
+     * @param publicKey Public key in form of String
+     * @throws RemoteException if errors take place during RMI.
+     */
     @Override
     public void insertKey(String userName, String publicKey) throws RemoteException {
         RedisRequester redisRequester = new RedisRequester();
@@ -53,12 +68,25 @@ public class RemoteObj implements CommonService {
         redisRequester.close();
     }
 
+    /**
+     * This method handles the request of the client.
+     * @param request Object that contains name of the file and a {@code List<String>} object containing people who need to sign.
+     * @param fileContent Content of the file in form of {@code byte[]}
+     * @return Universally unique identifier (UUID)
+     * @throws RemoteException if errors take place during RMI.
+     */
     @Override
     public String request(Request request, byte[] fileContent) throws RemoteException {
         uploadFile(request.getFileName(), fileContent);
         return cacheRequest(request);
     }
 
+    /**
+     * This method looks up a list of files that client needs to sign.
+     * @param userName Name of the connected user.
+     * @return {@code List<String>} containing names of the file that need to be signed.
+     * @throws RemoteException if errors take place during RMI.
+     */
     @Override
     public List<String> getFilesForSigning(String userName) throws RemoteException {
         RedisRequester redisRequester = new RedisRequester();
@@ -80,6 +108,12 @@ public class RemoteObj implements CommonService {
         return documentList;
     }
 
+    /**
+     * Transfers file in form of bytes over RMI connection to the client.
+     * @param fileName Name of the file
+     * @return {@code byte[]} containing the content of the file.
+     * @throws RemoteException if errors take place during RMI.
+     */
     @Override
     public byte[] downloadFile(String fileName) throws RemoteException {
         try {
@@ -98,6 +132,11 @@ public class RemoteObj implements CommonService {
         }
     }
 
+    /**
+     * Writes the bytes into the file specified.
+     * @param fileName Name of the file.
+     * @param fileContent {@code byte[]} containing content of file.
+     */
     public void uploadFile(String fileName, byte[] fileContent) {
         try {
             String directoryPath = fileUtils.getResourcesPath() + this.nodeType;
@@ -118,7 +157,13 @@ public class RemoteObj implements CommonService {
         }
     }
 
-    public void signDocument(String fileName, List<String> signatures, List<Long> timestamps) throws RemoteException {
+    /**
+     * Opens a PDFHandler object and appends the timestamps and clients who signed the document.
+     * @param fileName Name of the file.
+     * @param signatures {@code List<String>} containing clients who signed the document.
+     * @param timestamps {@code List<Long>} containing timestamps of when clients signed the document.
+     */
+    public void signDocument(String fileName, List<String> signatures, List<Long> timestamps) {
         String directoryPath = fileUtils.getResourcesPath() + this.nodeType;
         PDFHandler pdfHandler = new PDFHandler(new File(directoryPath + "/" + fileName));
         pdfHandler.loadDocument();
@@ -134,6 +179,12 @@ public class RemoteObj implements CommonService {
         }
     }
 
+    /**
+     * Stores the clients request into the Redis Request Instance.
+     * @param request {@code Request} object containing the name of the file and {@code List<String>} containing names
+     *                of clients who need sign the document.
+     * @return Universally unique identifier (UUID)
+     */
     public String cacheRequest(Request request) {
         String uuid = UUID.nameUUIDFromBytes(request.getFileName().getBytes()).toString();
 
@@ -147,7 +198,14 @@ public class RemoteObj implements CommonService {
         return uuid;
     }
 
-
+    /**
+     * This method utilizes cryptography to verify client's signature.
+     * @param userName Name of the client.
+     * @param originalDocument {@code byte[]} content of original document
+     * @param signedDocument {@code byte[]} content of the signed document
+     * @param fileName Name of the file
+     * @throws RemoteException if errors take place during RMI.
+     */
     @Override
     public void verifySignature(String userName, byte[] originalDocument, byte[] signedDocument, String fileName) throws RemoteException {
 
@@ -179,6 +237,12 @@ public class RemoteObj implements CommonService {
         redisRequester.close();
     }
 
+    /**
+     * Stores the record which contains information about the document that is signed.
+     * @param fileName Name of the file.
+     * @param userName Name of the client
+     * @param timestamp The timestamp of when the document signed.
+     */
     public void cacheResponse(String fileName, String userName, long timestamp) {
         String uuid = UUID.nameUUIDFromBytes(fileName.getBytes()).toString();
 
@@ -200,6 +264,12 @@ public class RemoteObj implements CommonService {
         redisRequester.close();
     }
 
+    /**
+     * This method checks if the document was signed by all the people.
+     * @param uuid Universally unique identifier (UUID), used like a key to query from Redis instance
+     * @return true/false depending on if the document is signed by all the peers.
+     * @throws RemoteException if errors take place during RMI.
+     */
     @Override
     public boolean isFinished(String uuid) throws RemoteException {
         // Read from Response

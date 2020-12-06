@@ -13,18 +13,25 @@ import java.text.SimpleDateFormat;
 import java.util.Iterator;
 import java.util.List;
 
+/**
+ * This class writes textual signatures to the PDF file.
+ */
 public class PDFHandler {
     private PDDocument pdfFile;
     private File file;
     private FileUtils fileUtils;
 
+    /**
+     * Constructor of this class which initialized the instance variables.
+     * @param file {@code File} object which represents the PDF file.
+     */
     public PDFHandler(File file){
         this.file = file;
         this.fileUtils = new FileUtils();
     }
 
     /**
-     * Load the pdf file
+     * Load the pdf file.
      */
     public void loadDocument(){
         try {
@@ -37,8 +44,8 @@ public class PDFHandler {
 
     /**
      * Add signatures and timestamp to a new page of the pdf file
-     * @param signatures
-     * @param timestampList
+     * @param signatures {@code List<String>} containing signatures
+     * @param timestampList {@code List<Timestamp>} containing timestamps.
      */
     public void addSignature(List<String> signatures, List<Long> timestampList) {
         PDPage pdPage = new PDPage();
@@ -74,8 +81,8 @@ public class PDFHandler {
     }
 
     /**
-     * Save to file
-     * @return
+     * Save to file.
+     * @return {@code File} object.
      */
     public File savePDFFile() {
         File signedFile = null;
