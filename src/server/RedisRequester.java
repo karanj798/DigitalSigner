@@ -21,11 +21,11 @@ public class RedisRequester {
 
     public void set(int port, String key, String value) {
         requester.send(port + "|set|" + key + "|" + value, 0);
+        requester.recvStr(0);
     }
 
     public String keys(int port) {
         requester.send(port + "|keys|*", 0);
-
         return requester.recvStr(0);
     }
 

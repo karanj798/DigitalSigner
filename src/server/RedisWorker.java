@@ -36,11 +36,7 @@ public class RedisWorker extends Thread {
                 if (msg[1].equals("get"))  rsp = connection.sync().get(msg[2]);
                 if (msg[1].equals("set"))  rsp = connection.sync().set(msg[2], msg[3]);
                 if (msg[1].equals("keys")) rsp = connection.sync().keys(msg[2]).toString();
-                if (msg[1].equals("del"))  {
-                    System.out.println(msg[2]);
-                    rsp = connection.sync().del(msg[2]).toString();
-                    System.out.println(rsp);
-                }
+                if (msg[1].equals("del"))  rsp = connection.sync().del(msg[2]).toString();
 
                 connection.close();
                 if (Integer.parseInt(msg[0]) == 6379) redisClientKeys.shutdown();
