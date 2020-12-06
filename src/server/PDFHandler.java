@@ -40,7 +40,7 @@ public class PDFHandler {
      * @param signatures
      * @param timestampList
      */
-    public void addSignature(List<String> signatures, List<Timestamp> timestampList) {
+    public void addSignature(List<String> signatures, List<Long> timestampList) {
         PDPage pdPage = new PDPage();
         pdfFile.addPage(pdPage);
         try {
@@ -56,9 +56,9 @@ public class PDFHandler {
             contentStream.newLine();
 
             Iterator<String> it1 = signatures.iterator();
-            Iterator<Timestamp> it2 = timestampList.iterator();
+            Iterator<Long> it2 = timestampList.iterator();
             while (it1.hasNext() && it2.hasNext()) {
-                String ts = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss z").format(it2.next());
+                String ts = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss z").format(new Timestamp(it2.next()));
                 String signatureLine = "Name: " + it1.next() + "         Date: " + ts;
                 contentStream.showText(signatureLine);
                 contentStream.newLine();
