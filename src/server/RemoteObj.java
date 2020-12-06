@@ -90,7 +90,13 @@ public class RemoteObj implements CommonService {
     @Override
     public List<String> getFilesForSigning(String userName) throws RemoteException {
         RedisRequester redisRequester = new RedisRequester();
-        List<String> keySet = Arrays.asList(redisRequester.keys(6381).replace("[", "").replace("]", "").split(", "));
+
+        String responseK = redisRequester.keys(6381);
+
+        if (responseK.equals("[]")) return new ArrayList<>();
+
+        List<String> keySet = Arrays.asList(responseK.replace("[", "").replace("]", "").split(", "));
+
 
         List<String> documentList = new ArrayList<>();
 
