@@ -6,6 +6,7 @@ import common.model.Request;
 import java.awt.*;
 import java.io.*;
 import java.nio.file.Files;
+import java.rmi.ConnectException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -21,32 +22,37 @@ public class Client {
         // Run using: java -cp ".;out/production/DistributedSystemsProject/" client.Client
         try {
             Registry registry = LocateRegistry.getRegistry("localhost");
+            Registry backupRegistry = LocateRegistry.getRegistry("localhost", 45682);
             CommonService obj = null;
+            String nodeName = null;
 
-            System.out.println(Arrays.asList(registry.list()).toString());
+            //System.out.println(Arrays.asList(LocateRegistry.getRegistry("localhost").list()).toString());
             if (Arrays.asList(registry.list()).contains("MasterNode")) {
                 System.out.println("[MESSAGE]: MasterNode is alive");
                 obj = (CommonService) registry.lookup("MasterNode");
-            } else if (Arrays.asList(registry.list()).contains("BackupNode")) {
+                nodeName = "MasterNode";
+            } else if (Arrays.asList(backupRegistry.list()).contains("BackupNode")) {
                 System.out.println("[MESSAGE]: BackupNode is alive");
-                obj = (CommonService) registry.lookup("BackupNode");
+                obj = (CommonService) backupRegistry.lookup("BackupNode");
+                nodeName = "BackupNode";
             } else {
                 System.out.println("[ERROR]: All servers are down...");
                 System.exit(0);
             }
-            handleInputs(obj);
+            handleInputs(obj, nodeName);
         } catch (RemoteException | NotBoundException e) {
             e.printStackTrace();
         }
     }
 
-    public static void handleInputs(CommonService obj) throws RemoteException {
+    public static void handleInputs(CommonService obj, String nodeName) throws RemoteException {
         Scanner in = new Scanner(System.in);
         System.out.print("Enter client name: ");
         String profileName = in.nextLine().trim();
 
         Profile profile = new Profile(profileName);
         profile.generatePrivatePublicKeysPair();
+        try {
         obj.insertKey(profile.name, profile.getPublicKeyAsString());
 
         while (true) {
@@ -57,44 +63,61 @@ public class Client {
                 if (!response.equals("1") && !response.equals("2") && !response.equalsIgnoreCase("EXIT")) System.out.print("Enter either (1) or (2) or (EXIT)...");
             }
 
-            if (response.equals("1")) {
-                handleFileInput(in, profileName, obj);
-            } else if (response.equals("2")) {
-                List<String> files = obj.getFilesForSigning(profileName);
-                String fileToSignInput = "";
+                if (response.equals("1")) {
+                    handleFileInput(in, profileName, obj, nodeName);
+                } else if (response.equals("2")) {
+                    List<String> files = obj.getFilesForSigning(profileName);
+                    String fileToSignInput = "";
 
-                if(!files.isEmpty()){
-                    System.out.println("\nFiles to be signed: " + files);
-                    System.out.print("Which files to sign (* = all): ");
+                    if (!files.isEmpty()) {
+                        System.out.println("\nFiles to be signed: " + files);
+                        System.out.print("Which files to sign (* = all): ");
 
-                    while ((!fileToSignInput.contains(".") && !fileToSignInput.equalsIgnoreCase("*")) || (fileToSignInput.contains(".") && !files.contains(fileToSignInput))) {
-                        fileToSignInput = in.nextLine().trim();
-                        if (!fileToSignInput.contains(".") && !fileToSignInput.equalsIgnoreCase("*"))
-                            System.out.print("Please enter either (* = all) or a file name containing the extension...");
-                        if (fileToSignInput.contains(".") && !files.contains(fileToSignInput))
-                            System.out.print("File not found... please choose a file from list provided: ");
-                    }
-
-                    if (fileToSignInput.equalsIgnoreCase("*")) {
-                        for (String f : files) {
-                            handleFileToSign(obj, profile, profileName, f, in);
+                        while ((!fileToSignInput.contains(".") && !fileToSignInput.equalsIgnoreCase("*")) || (fileToSignInput.contains(".") && !files.contains(fileToSignInput))) {
+                            fileToSignInput = in.nextLine().trim();
+                            if (!fileToSignInput.contains(".") && !fileToSignInput.equalsIgnoreCase("*"))
+                                System.out.print("Please enter either (* = all) or a file name containing the extension...");
+                            if (fileToSignInput.contains(".") && !files.contains(fileToSignInput))
+                                System.out.print("File not found... please choose a file from list provided: ");
                         }
-                    } else if (fileToSignInput.contains(".") && files.contains(fileToSignInput)) {
-                        handleFileToSign(obj, profile, profileName, fileToSignInput, in);
+
+                        if (fileToSignInput.equalsIgnoreCase("*")) {
+                            for (String f : files) {
+                                handleFileToSign(obj, profile, profileName, f, in);
+                            }
+                        } else if (fileToSignInput.contains(".") && files.contains(fileToSignInput)) {
+                            handleFileToSign(obj, profile, profileName, fileToSignInput, in);
+                        }
+                    } else {
+                        System.out.println("No files available to sign... Going back to previous prompt.\n");
                     }
                 } else {
-                    System.out.println("No files available to sign... Going back to previous prompt.\n");
+                    System.out.println("Bye!");
+                    break;
                 }
-            } else {
-                System.out.println("Bye!");
-                break;
+
+            }
+        } catch (ConnectException e) {
+            try {
+                if (nodeName.equals("MasterNode")) {
+                    Registry registry = LocateRegistry.getRegistry("localhost", 45682);
+                    // Failure on MasterNode
+                    obj = (CommonService) registry.lookup("BackupNode");
+                    handleInputs(obj, "BackupNode");
+                } else if (nodeName.equals("BackupNode")) {
+                    Registry registry = LocateRegistry.getRegistry("localhost");
+                    obj = (CommonService) registry.lookup("MasterNode");
+                    handleInputs(obj, "MasterNode");
+                }
+            } catch (NotBoundException notBoundException) {
+                System.out.println("All servers are offline.");
             }
         }
 
         in.close();
     }
 
-    private static void handleFileInput(Scanner in, String profileName, CommonService obj){
+    private static void handleFileInput(Scanner in, String profileName, CommonService obj, String nodeName){
         try {
             System.out.print("Enter file name: ");
             String fileName = "";
@@ -141,12 +164,29 @@ public class Client {
 
                         waitForSignedFile = transactionInput.equalsIgnoreCase("Y");
                     }
-                } else{ // if answer is N
+                } else { // if answer is N
                     System.out.println("ok bye...\n");
                     break;
                 }
             }
 
+        } catch (ConnectException e) {
+            try {
+                if (nodeName.equals("MasterNode")) {
+                    Registry registry = LocateRegistry.getRegistry("localhost", 45682);
+                    // Failure on MasterNode
+                    obj = (CommonService) registry.lookup("BackupNode");
+                    handleInputs(obj, "BackupNode");
+                } else if (nodeName.equals("BackupNode")) {
+                    Registry registry = LocateRegistry.getRegistry("localhost");
+                    obj = (CommonService) registry.lookup("MasterNode");
+                    handleInputs(obj, "MasterNode");
+                }
+            } catch (NotBoundException notBoundException) {
+                System.out.println("All servers are offline.");
+            } catch (RemoteException remoteException) {
+                remoteException.printStackTrace();
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }

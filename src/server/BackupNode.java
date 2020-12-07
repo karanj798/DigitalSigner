@@ -21,7 +21,7 @@ public class BackupNode {
         CommonService obj = new RemoteObj("tcp://*:5517", "tcp://*:5516", "Backup");
 
         CommonService stub = (CommonService) UnicastRemoteObject.exportObject(obj, 0);
-        Registry registry = LocateRegistry.getRegistry();
+        Registry registry = LocateRegistry.getRegistry(45682);
 
         registry.rebind(registryName, stub);
 
