@@ -195,15 +195,16 @@ public class Client {
 
         } catch (ConnectException e) {
             try {
+                // Failover switch
                 if (nodeName.equals("MasterNode")) {
                     Registry registry = LocateRegistry.getRegistry("localhost", 45682);
                     // Failure on MasterNode
                     obj = (CommonService) registry.lookup("BackupNode");
-                    handleInputs(obj, "BackupNode");
+                    handleFileInput(in, profileName, obj, "BackupNode");
                 } else if (nodeName.equals("BackupNode")) {
                     Registry registry = LocateRegistry.getRegistry("localhost");
                     obj = (CommonService) registry.lookup("MasterNode");
-                    handleInputs(obj, "MasterNode");
+                    handleFileInput(in, profileName, obj, "MasterNode");
                 }
             } catch (NotBoundException notBoundException) {
                 System.out.println("All servers are offline.");
@@ -222,22 +223,19 @@ public class Client {
      * @param profileName Name of the user
      * @param fileName Name of the file
      * @param in Scanner object used to read STDIN
-     * @throws RemoteException
+     * @throws RemoteException if RMI error occurs
      */
     private static void handleFileToSign(CommonService obj, Profile profile, String profileName, String fileName, Scanner in) throws RemoteException {
         byte[] fileBytes = obj.downloadFile(fileName);
         File fileToSign = new File("resources/" + profileName + "/" + fileName.replaceAll(".pdf", "") + "_toSign.pdf");
-        BufferedOutputStream output = null;
         try {
-            output = new BufferedOutputStream(new FileOutputStream(fileToSign));
+            BufferedOutputStream output = new BufferedOutputStream(new FileOutputStream(fileToSign));
             output.write(fileBytes, 0, fileBytes.length);
             output.flush();
             output.close();
 
             System.out.println("\nOpening " + fileName + " to review...");
             Desktop.getDesktop().open(fileToSign);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }
