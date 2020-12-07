@@ -17,6 +17,9 @@ import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+/**
+ * This class handles all the client interacts and communicates to the server.
+ */
 public class Client {
     public static void main(String[] args) {
         // Run using: java -cp ".;out/production/DistributedSystemsProject/" client.Client
@@ -26,7 +29,7 @@ public class Client {
             CommonService obj = null;
             String nodeName = null;
 
-            //System.out.println(Arrays.asList(LocateRegistry.getRegistry("localhost").list()).toString());
+            // Check which ever Nodes are up and use the Remote stub from there
             if (Arrays.asList(registry.list()).contains("MasterNode")) {
                 System.out.println("[MESSAGE]: MasterNode is alive");
                 obj = (CommonService) registry.lookup("MasterNode");
@@ -39,12 +42,21 @@ public class Client {
                 System.out.println("[ERROR]: All servers are down...");
                 System.exit(0);
             }
+
+            // Listen to all the CLI inputs
             handleInputs(obj, nodeName);
         } catch (RemoteException | NotBoundException e) {
             e.printStackTrace();
         }
     }
 
+    /**
+     * This method is used to handle all the inputs using InputStream.
+     *
+     * @param obj      Remote stub
+     * @param nodeName Name of the server that client is connected to
+     * @throws RemoteException if RMI failures take place
+     */
     public static void handleInputs(CommonService obj, String nodeName) throws RemoteException {
         Scanner in = new Scanner(System.in);
         System.out.print("Enter client name: ");
@@ -53,15 +65,16 @@ public class Client {
         Profile profile = new Profile(profileName);
         profile.generatePrivatePublicKeysPair();
         try {
-        obj.insertKey(profile.name, profile.getPublicKeyAsString());
+            obj.insertKey(profile.name, profile.getPublicKeyAsString());
 
-        while (true) {
-            System.out.print("Enter selection (1=Upload File | 2=Wait for Signing File | EXIT=to exit the prompt): ");
-            String response = "";
-            while (!response.equals("1") && !response.equals("2") && !response.equalsIgnoreCase("EXIT")) {
-                response = in.nextLine().trim().trim();
-                if (!response.equals("1") && !response.equals("2") && !response.equalsIgnoreCase("EXIT")) System.out.print("Enter either (1) or (2) or (EXIT)...");
-            }
+            while (true) {
+                System.out.print("Enter selection (1=Upload File | 2=Wait for Signing File | EXIT=to exit the prompt): ");
+                String response = "";
+                while (!response.equals("1") && !response.equals("2") && !response.equalsIgnoreCase("EXIT")) {
+                    response = in.nextLine().trim().trim();
+                    if (!response.equals("1") && !response.equals("2") && !response.equalsIgnoreCase("EXIT"))
+                        System.out.print("Enter either (1) or (2) or (EXIT)...");
+                }
 
                 if (response.equals("1")) {
                     handleFileInput(in, profileName, obj, nodeName);
@@ -99,6 +112,7 @@ public class Client {
             }
         } catch (ConnectException e) {
             try {
+                // Perform node Failover switch
                 if (nodeName.equals("MasterNode")) {
                     Registry registry = LocateRegistry.getRegistry("localhost", 45682);
                     // Failure on MasterNode
@@ -117,15 +131,22 @@ public class Client {
         in.close();
     }
 
-    private static void handleFileInput(Scanner in, String profileName, CommonService obj, String nodeName){
+    /**
+     * This method handles all the File I/O interactions from the client.
+     * @param in Scanner object which reads STDIN
+     * @param profileName Name of the client
+     * @param obj Remote stub
+     * @param nodeName Name of the server that client is connected to
+     */
+    private static void handleFileInput(Scanner in, String profileName, CommonService obj, String nodeName) {
         try {
             System.out.print("Enter file name: ");
             String fileName = "";
             File file = new File("");
-            while(!file.isFile()) {
+            while (!file.isFile()) {
                 fileName = in.nextLine().trim();
                 file = new File("resources/" + profileName + "/" + fileName);
-                if(!file.isFile()) System.out.print("File does not exist... Please provide another file name: ");
+                if (!file.isFile()) System.out.print("File does not exist... Please provide another file name: ");
             }
 
             System.out.print("\nWhich users need to sign (separated by comma): ");
@@ -134,13 +155,14 @@ public class Client {
             String uuid = obj.request(new Request(fileName, userNameList), Files.readAllBytes(file.toPath()));
             System.out.print("Check status of your transaction (Y/N): ");
             String transactionInput = "";
-            while(!transactionInput.equalsIgnoreCase("Y") && !transactionInput.equalsIgnoreCase("N")){
+            while (!transactionInput.equalsIgnoreCase("Y") && !transactionInput.equalsIgnoreCase("N")) {
                 transactionInput = in.nextLine().trim();
-                if(!transactionInput.equalsIgnoreCase("Y") && !transactionInput.equalsIgnoreCase("N")) System.out.println("Please enter either (Y) or (N) for transaction...");
+                if (!transactionInput.equalsIgnoreCase("Y") && !transactionInput.equalsIgnoreCase("N"))
+                    System.out.println("Please enter either (Y) or (N) for transaction...");
             }
 
             boolean waitForSignedFile = transactionInput.equalsIgnoreCase("Y");
-            while(true){
+            while (true) {
                 if (waitForSignedFile) {
                     if (obj.isFinished(uuid)) {
                         System.out.println("The File has been signed!");
@@ -157,9 +179,10 @@ public class Client {
                     } else {
                         System.out.print("Your file has not been signed yet... Do you still want to check the status of your transaction (Y/N): ");
                         transactionInput = "";
-                        while(!transactionInput.equalsIgnoreCase("Y") && !transactionInput.equalsIgnoreCase("N")){
+                        while (!transactionInput.equalsIgnoreCase("Y") && !transactionInput.equalsIgnoreCase("N")) {
                             transactionInput = in.nextLine().trim();
-                            if(!transactionInput.equalsIgnoreCase("Y") && !transactionInput.equalsIgnoreCase("N")) System.out.println("Please enter either (Y) or (N) for transaction...");
+                            if (!transactionInput.equalsIgnoreCase("Y") && !transactionInput.equalsIgnoreCase("N"))
+                                System.out.println("Please enter either (Y) or (N) for transaction...");
                         }
 
                         waitForSignedFile = transactionInput.equalsIgnoreCase("Y");
@@ -192,6 +215,15 @@ public class Client {
         }
     }
 
+    /**
+     * This method handles all the interactions needed to sign the file.
+     * @param obj Remote Stub
+     * @param profile Profile object
+     * @param profileName Name of the user
+     * @param fileName Name of the file
+     * @param in Scanner object used to read STDIN
+     * @throws RemoteException
+     */
     private static void handleFileToSign(CommonService obj, Profile profile, String profileName, String fileName, Scanner in) throws RemoteException {
         byte[] fileBytes = obj.downloadFile(fileName);
         File fileToSign = new File("resources/" + profileName + "/" + fileName.replaceAll(".pdf", "") + "_toSign.pdf");
@@ -212,12 +244,13 @@ public class Client {
 
         System.out.print("Do you want to sign this document? (Y/N): ");
         String toSignInput = "";
-        while(!toSignInput.equalsIgnoreCase("Y") && !toSignInput.equalsIgnoreCase("N")){
+        while (!toSignInput.equalsIgnoreCase("Y") && !toSignInput.equalsIgnoreCase("N")) {
             toSignInput = in.nextLine().trim();
-            if(!toSignInput.equalsIgnoreCase("Y") && !toSignInput.equalsIgnoreCase("N")) System.out.println("Please enter either (Y) or (N) to sign the document...");
+            if (!toSignInput.equalsIgnoreCase("Y") && !toSignInput.equalsIgnoreCase("N"))
+                System.out.println("Please enter either (Y) or (N) to sign the document...");
         }
 
-        if(toSignInput.equalsIgnoreCase("Y")) {
+        if (toSignInput.equalsIgnoreCase("Y")) {
             CryptoSign sign = new CryptoSign();
             sign.signDocument(fileBytes, profile.getPrivateKey());
             byte[] signedFileBytes = sign.getSignedDocument();
@@ -226,7 +259,7 @@ public class Client {
         } // else delete and move on
 
         System.out.println("\nAttempting to remove the file " + fileToSign.getName());
-        while(fileToSign.exists()){ // deleting local file copy
+        while (fileToSign.exists()) { // deleting local file copy
             if (fileToSign.delete()) {
                 System.out.println("Removed file: " + fileToSign.getName() + "\n");
                 break;
