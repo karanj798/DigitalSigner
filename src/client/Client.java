@@ -13,6 +13,7 @@ import java.rmi.registry.Registry;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class Client {
@@ -42,17 +43,17 @@ public class Client {
     public static void handleInputs(CommonService obj) throws RemoteException {
         Scanner in = new Scanner(System.in);
         System.out.print("Enter client name: ");
-        String profileName = in.nextLine();
+        String profileName = in.nextLine().trim();
 
         Profile profile = new Profile(profileName);
         profile.generatePrivatePublicKeysPair();
         obj.insertKey(profile.name, profile.getPublicKeyAsString());
 
-        while (!Thread.currentThread().isInterrupted()) {
+        while (true) {
             System.out.print("Enter selection (1=Upload File | 2=Wait for Signing File | EXIT=to exit the prompt): ");
             String response = "";
             while (!response.equals("1") && !response.equals("2") && !response.equalsIgnoreCase("EXIT")) {
-                response = in.nextLine();
+                response = in.nextLine().trim().trim();
                 if (!response.equals("1") && !response.equals("2") && !response.equalsIgnoreCase("EXIT")) System.out.print("Enter either (1) or (2) or (EXIT)...");
             }
 
@@ -66,12 +67,12 @@ public class Client {
                     System.out.println("\nFiles to be signed: " + files);
                     System.out.print("Which files to sign (* = all): ");
 
-                    while ((!fileToSignInput.contains(".") && !fileToSignInput.equalsIgnoreCase("*")) || !files.contains(fileToSignInput)) {
-                        fileToSignInput = in.nextLine();
+                    while ((!fileToSignInput.contains(".") && !fileToSignInput.equalsIgnoreCase("*")) || (fileToSignInput.contains(".") && !files.contains(fileToSignInput))) {
+                        fileToSignInput = in.nextLine().trim();
                         if (!fileToSignInput.contains(".") && !fileToSignInput.equalsIgnoreCase("*"))
-                            System.out.print("Please enter either (* = all) or a fill name containing the extension...");
+                            System.out.print("Please enter either (* = all) or a file name containing the extension...");
                         if (fileToSignInput.contains(".") && !files.contains(fileToSignInput))
-                            System.out.print("File not found... please choose a file from list provided:");
+                            System.out.print("File not found... please choose a file from list provided: ");
                     }
 
                     if (fileToSignInput.equalsIgnoreCase("*")) {
@@ -99,19 +100,19 @@ public class Client {
             String fileName = "";
             File file = new File("");
             while(!file.isFile()) {
-                fileName = in.nextLine();
+                fileName = in.nextLine().trim();
                 file = new File("resources/" + profileName + "/" + fileName);
                 if(!file.isFile()) System.out.print("File does not exist... Please provide another file name: ");
             }
 
             System.out.print("\nWhich users need to sign (separated by comma): ");
-            List<String> userNameList = Arrays.stream(in.nextLine().split(",")).collect(Collectors.toList());
+            List<String> userNameList = Arrays.stream(in.nextLine().trim().split(",")).collect(Collectors.toList());
 
             String uuid = obj.request(new Request(fileName, userNameList), Files.readAllBytes(file.toPath()));
             System.out.print("Check status of your transaction (Y/N): ");
             String transactionInput = "";
             while(!transactionInput.equalsIgnoreCase("Y") && !transactionInput.equalsIgnoreCase("N")){
-                transactionInput = in.nextLine();
+                transactionInput = in.nextLine().trim();
                 if(!transactionInput.equalsIgnoreCase("Y") && !transactionInput.equalsIgnoreCase("N")) System.out.println("Please enter either (Y) or (N) for transaction...");
             }
 
@@ -134,7 +135,7 @@ public class Client {
                         System.out.print("Your file has not been signed yet... Do you still want to check the status of your transaction (Y/N): ");
                         transactionInput = "";
                         while(!transactionInput.equalsIgnoreCase("Y") && !transactionInput.equalsIgnoreCase("N")){
-                            transactionInput = in.nextLine();
+                            transactionInput = in.nextLine().trim();
                             if(!transactionInput.equalsIgnoreCase("Y") && !transactionInput.equalsIgnoreCase("N")) System.out.println("Please enter either (Y) or (N) for transaction...");
                         }
 
@@ -172,7 +173,7 @@ public class Client {
         System.out.print("Do you want to sign this document? (Y/N): ");
         String toSignInput = "";
         while(!toSignInput.equalsIgnoreCase("Y") && !toSignInput.equalsIgnoreCase("N")){
-            toSignInput = in.nextLine();
+            toSignInput = in.nextLine().trim();
             if(!toSignInput.equalsIgnoreCase("Y") && !toSignInput.equalsIgnoreCase("N")) System.out.println("Please enter either (Y) or (N) to sign the document...");
         }
 
@@ -181,12 +182,24 @@ public class Client {
             sign.signDocument(fileBytes, profile.getPrivateKey());
             byte[] signedFileBytes = sign.getSignedDocument();
             obj.verifySignature(profileName, fileBytes, signedFileBytes, fileName);
+
         } // else delete and move on
 
-        if (fileToSign.delete()) {
-            System.out.println("Removing the file: " + fileToSign.getName());
-        } else {
-            System.out.println("Unable to remove file: " + fileToSign.getName());
+        System.out.println("\nAttempting to remove the file " + fileToSign.getName());
+        while(fileToSign.exists()){ // deleting local file copy
+            if (fileToSign.delete()) {
+                System.out.println("Removed file: " + fileToSign.getName() + "\n");
+                break;
+            } else {
+                System.out.println("Unable to remove file: " + fileToSign.getName() + "... Try to exit out of the file viewer...");
+            }
+
+            try {
+                TimeUnit.SECONDS.sleep(3);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
+
     }
 }
