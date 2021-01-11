@@ -14,9 +14,6 @@ import java.rmi.server.UnicastRemoteObject;
 public class BackupNode {
     public static void main(String[] args) throws RemoteException {
 
-        if (System.getSecurityManager() == null)
-            System.setSecurityManager(new SecurityManager());
-
         String registryName = "BackupNode";
         CommonService obj = new RemoteObj("tcp://*:5517", "tcp://*:5516", "Backup");
 

@@ -14,8 +14,6 @@ import java.rmi.server.UnicastRemoteObject;
  */
 public class MasterNode {
     public static void main(String[] args) throws IOException {
-        if (System.getSecurityManager() == null)
-            System.setSecurityManager(new SecurityManager());
 
         String registryName = "MasterNode";
         CommonService obj = new RemoteObj("tcp://*:5516","tcp://*:5517", "Master");
