@@ -22,7 +22,6 @@ import java.util.stream.Collectors;
  */
 public class Client {
     public static void main(String[] args) {
-        // Run using: java -cp ".;out/production/DistributedSystemsProject/" client.Client
         try {
             Registry registry = LocateRegistry.getRegistry("localhost");
             Registry backupRegistry = LocateRegistry.getRegistry("localhost", 45682);
@@ -53,7 +52,7 @@ public class Client {
     /**
      * This method is used to handle all the inputs using InputStream.
      *
-     * @param obj      Remote stub
+     * @param obj Remote stub
      * @param nodeName Name of the server that client is connected to
      * @throws RemoteException if RMI failures take place
      */
