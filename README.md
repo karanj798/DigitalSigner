@@ -7,11 +7,11 @@
 ## Configuration
 ```shell script
 # Run Server
-chmod u+x start.sh && ./start.sh
+./service.sh start
 
 # Run Client
 cd target/classes && java client.Client
 
 # Stop Server
-chmod u+x stop.sh && ./stop.sh
+./service.sh stop
 ```

@@ -33,6 +33,7 @@
             <version>0.5.2</version>
         </dependency>
     </dependencies>
+
     <build>
         <plugins>
             <plugin>
@@ -40,11 +41,9 @@
                     <executions>
                         <execution>
                             <phase>process-sources</phase>
-
                             <goals>
                                 <goal>copy-dependencies</goal>
                             </goals>
-
                             <configuration>
                                 <outputDirectory>${targetdirectory}</outputDirectory>
                             </configuration>
